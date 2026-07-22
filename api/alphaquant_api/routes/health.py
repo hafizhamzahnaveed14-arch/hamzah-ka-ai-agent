@@ -23,6 +23,7 @@ async def health():
         "status": "ok",
         "app": settings.app_name,
         "trading_mode": settings.trading_mode,
+        "api_build": "journal-v1",
         "disclaimer": (
             "Signals carry uncertainty. No outcome is guaranteed. "
             "NO TRADE is a correct and frequent result."

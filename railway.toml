@@ -1,6 +1,8 @@
 # Default Railway service = API.
-# Duplicate this service in the dashboard for the scanner and override start command:
+# For scanner: duplicate service, override start command to:
 #   python scripts/paper_scanner.py
+# Do NOT set healthcheckPath on the scanner — it has no HTTP server.
+# Set /health only on the API service in Railway UI if you want it.
 
 [build]
 builder = "DOCKERFILE"
@@ -9,5 +11,3 @@ dockerfilePath = "docker/Dockerfile.api"
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-healthcheckPath = "/health"
-healthcheckTimeout = 30

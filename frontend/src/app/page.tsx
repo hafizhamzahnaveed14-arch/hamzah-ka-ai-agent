@@ -107,7 +107,14 @@ export default function DashboardPage() {
       const data = await fetchJournal(40);
       setJournal(data.entries);
     } catch (err) {
-      setJournalError(err instanceof Error ? err.message : "Journal load failed");
+      const raw = err instanceof Error ? err.message : "Journal load failed";
+      if (raw.includes("Not Found") || raw.includes("404")) {
+        setJournalError(
+          "API pe journal route abhi deploy nahi hua. Railway → API → Ctrl+K → Deploy Latest Commit. /health mein api_build: journal-v1 aana chahiye.",
+        );
+      } else {
+        setJournalError(raw);
+      }
     } finally {
       setJournalLoading(false);
     }

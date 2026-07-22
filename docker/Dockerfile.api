@@ -19,11 +19,12 @@ COPY ai-models ./ai-models
 COPY config ./config
 COPY scripts ./scripts
 
-RUN pip install --no-cache-dir -e ".[dev]"
+# Production deps only (no pytest/ruff) — faster, less OOM on Railway
+RUN pip install --no-cache-dir -e .
 
 ENV PYTHONUNBUFFERED=1
 ENV TRADING_MODE=paper
+ENV APP_ENV=production
 
 EXPOSE 8000
-# Railway injects $PORT; local default 8000
-CMD ["sh", "-c", "uvicorn alphaquant_api.main:app --host 0.0.0.0 --port ${PORT:-8000} --app-dir api"]
+CMD ["sh", "-c", "exec uvicorn alphaquant_api.main:app --host 0.0.0.0 --port ${PORT:-8000} --app-dir api"]

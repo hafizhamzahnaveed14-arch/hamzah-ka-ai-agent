@@ -112,6 +112,10 @@ export default function DashboardPage() {
         setJournalError(
           "API pe journal route abhi deploy nahi hua. Railway → API → Ctrl+K → Deploy Latest Commit. /health mein api_build: journal-v1 aana chahiye.",
         );
+      } else if (raw.includes("502") || raw.includes("failed to respond")) {
+        setJournalError(
+          "Railway API 502 — service down/restarting. Deployments → View logs check karo; start command uvicorn hona chahiye (scanner nahi).",
+        );
       } else {
         setJournalError(raw);
       }

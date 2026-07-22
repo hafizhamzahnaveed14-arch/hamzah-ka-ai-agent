@@ -1,11 +1,11 @@
-# API service (hamzah-ka-ai-agent public URL).
-# Scanner service: Settings → Config-as-code → use railway.scanner.toml
+# Scanner worker — no HTTP, no healthcheck.
+# In Railway: Settings → Config-as-code → Config file path = railway.scanner.toml
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "docker/Dockerfile.api"
 watchPatterns = [
-  "api/**",
+  "scripts/**",
   "shared/**",
   "services/**",
   "database/**",
@@ -15,14 +15,11 @@ watchPatterns = [
   "indicators/**",
   "docker/**",
   "config/**",
-  "scripts/**",
   "pyproject.toml",
-  "railway.toml",
+  "railway.scanner.toml",
 ]
 
 [deploy]
-startCommand = "uvicorn alphaquant_api.main:app --host 0.0.0.0 --port $PORT --app-dir api"
+startCommand = "python scripts/paper_scanner.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-healthcheckPath = "/health"
-healthcheckTimeout = 120

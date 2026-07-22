@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     """Runtime configuration. Secrets must never be hardcoded."""
 
     model_config = SettingsConfigDict(
-        env_file=(".env", "config/.env.example"),
+        # Do NOT load config/.env.example in containers — empty keys can confuse local overrides.
+        # Railway/Netlify inject real env vars; local uses `.env`.
+        env_file=(".env",),
         env_file_encoding="utf-8",
         extra="ignore",
     )

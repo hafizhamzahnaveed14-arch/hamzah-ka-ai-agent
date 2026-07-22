@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alphaquant-ai"
+version = "0.1.0"
+description = "Institutional-style crypto futures trading assistant (human-in-the-loop)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "AlphaQuant" }]
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "pydantic>=2.9.0",
+  "pydantic-settings>=2.6.0",
+  "sqlalchemy>=2.0.36",
+  "alembic>=1.14.0",
+  "asyncpg>=0.30.0",
+  "psycopg2-binary>=2.9.10",
+  "redis>=5.2.0",
+  "httpx>=0.28.0",
+  "websockets>=14.0",
+  "pandas>=2.2.0",
+  "numpy>=2.1.0",
+  "python-dotenv>=1.0.1",
+  "structlog>=24.4.0",
+  "tenacity>=9.0.0",
+  "orjson>=3.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=6.0.0",
+  "respx>=0.21.0",
+  "ruff>=0.8.0",
+  "mypy>=1.13.0",
+]
+ml = [
+  "scikit-learn>=1.5.0",
+  "xgboost>=2.1.0",
+  "lightgbm>=4.5.0",
+  "catboost>=1.2.0",
+  "torch>=2.5.0",
+]
+
+[tool.setuptools.packages.find]
+where = [
+  "shared",
+  "data-layer",
+  "indicators",
+  "strategies",
+  "risk-engine",
+  "api",
+  "database",
+  "services",
+  "backtesting",
+  "ai-models",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = [
+  "shared",
+  "data-layer",
+  "indicators",
+  "strategies",
+  "risk-engine",
+  "api",
+  "database",
+  "services",
+  "backtesting",
+  "ai-models",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

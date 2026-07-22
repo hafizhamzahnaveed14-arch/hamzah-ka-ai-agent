@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0c0f12;
+  --bg-elevated: #12171c;
+  --bg-panel: #161c22;
+  --line: #24303a;
+  --text: #e8eef3;
+  --muted: #8b9aab;
+  --paper: #d4a017;
+  --paper-bg: #2a2208;
+  --long: #2dd4a0;
+  --short: #f07167;
+  --notrade: #8b9aab;
+  --accent: #4db6d4;
+  --warn: #e8a54b;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-panel: var(--bg-panel);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-paper: var(--paper);
+  --color-paper-bg: var(--paper-bg);
+  --color-long: var(--long);
+  --color-short: var(--short);
+  --color-notrade: var(--notrade);
+  --color-accent: var(--accent);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #1a2833 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #1a2218 0%, transparent 45%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}

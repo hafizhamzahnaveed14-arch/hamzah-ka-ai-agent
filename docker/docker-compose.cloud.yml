@@ -1,0 +1,35 @@
+# Always-on stack with Neon Postgres (no local Postgres required)
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    profiles: ["local-redis"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    env_file:
+      - ../.env
+    environment:
+      TRADING_MODE: paper
+      APP_ENV: production
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  scanner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    env_file:
+      - ../.env
+    environment:
+      TRADING_MODE: paper
+      APP_ENV: production
+    command: ["python", "scripts/paper_scanner.py"]
+    restart: unless-stopped
+    depends_on:
+      - api

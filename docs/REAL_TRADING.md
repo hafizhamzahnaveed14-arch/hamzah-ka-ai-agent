@@ -4,7 +4,13 @@ Autopilot **OFF**. Scanner **never** places live orders.
 Desk only: **Preview → type YES → Confirm**.
 
 Cross + 200x can liquidate **more than** the 0.5% init/stop budget. No profit guarantee.  
-Use a **small** wallet equity in Desk Controls for the first test.
+Use **real wallet equity** in Desk Controls (e.g. ~10 USDT if that is your MEXC balance) — not 10000.
+
+### Already have open MEXC trades?
+
+Manual positions on **CROSS** share the same wallet as any new desk order.  
+If you already hold several 200x longs on a ~$10 account, **do not add another** until you reduce risk / free margin.  
+After keys are on Railway: `GET /api/v1/live/account` lists open positions read-only.
 
 ---
 

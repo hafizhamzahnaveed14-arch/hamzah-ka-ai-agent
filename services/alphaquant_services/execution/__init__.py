@@ -107,6 +107,26 @@ class LiveExecutionService:
                 raise RiskViolationError("Computed contract vol <= 0 — increase equity or tighten stop")
 
             open_type = 2 if self.settings.margin_mode == "cross" else 1
+            open_n = 0
+            try:
+                raw_pos = await private.get_open_positions()
+                pdata = raw_pos.get("data") if isinstance(raw_pos, dict) else raw_pos
+                if isinstance(pdata, list):
+                    open_n = len(pdata)
+            except Exception:  # noqa: BLE001 — preview still useful without position count
+                open_n = 0
+
+            extra_warn = ""
+            if open_n > 0:
+                extra_warn = (
+                    f" You already have {open_n} open MEXC position(s) on CROSS — "
+                    "new size shares margin and can liquidate the whole book."
+                )
+            if idea.risk.account_equity < 50:
+                extra_warn += (
+                    " Desk equity looks very small; 200x CROSS is extreme on tiny wallets."
+                )
+
             token = secrets.token_urlsafe(24)
             preview = LivePreview(
                 idea=idea.model_copy(
@@ -121,6 +141,7 @@ class LiveExecutionService:
                     "REAL MONEY. Confirm places a live MEXC order. "
                     "200x CROSS can lose more than 0.5% if liquidated. "
                     "No profit is guaranteed. Autopilot is OFF."
+                    + extra_warn
                 ),
             )
             _PENDING[token] = preview

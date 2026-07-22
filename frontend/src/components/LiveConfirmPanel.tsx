@@ -37,6 +37,8 @@ export function LiveConfirmPanel({ symbol, side, entry, stopLoss, equity }: Prop
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [accountNote, setAccountNote] = useState<string | null>(null);
+
   const refreshStatus = useCallback(async () => {
     try {
       const res = await fetch(`${API}/api/v1/live/status`, { cache: "no-store" });
@@ -46,11 +48,39 @@ export function LiveConfirmPanel({ symbol, side, entry, stopLoss, equity }: Prop
     }
   }, []);
 
+  const refreshAccount = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/v1/live/account`, { cache: "no-store" });
+      if (!res.ok) {
+        setAccountNote(null);
+        return;
+      }
+      const data = await res.json();
+      const n = data.open_position_count ?? 0;
+      const eq = data.suggested_desk_equity_usdt;
+      setAccountNote(
+        n > 0
+          ? `MEXC open positions: ${n}. Set Desk Wallet Equity to ~${eq ?? "your USDT balance"} (not 10000). CROSS shares margin — avoid stacking more 200x.`
+          : eq != null
+            ? `MEXC equity ~${eq} USDT — use this in Desk Wallet Equity.`
+            : null,
+      );
+    } catch {
+      setAccountNote(null);
+    }
+  }, []);
+
   useEffect(() => {
     void refreshStatus();
     const id = window.setInterval(() => void refreshStatus(), 30_000);
     return () => window.clearInterval(id);
   }, [refreshStatus]);
+
+  useEffect(() => {
+    if (status?.mexc_keys_configured) {
+      void refreshAccount();
+    }
+  }, [status?.mexc_keys_configured, refreshAccount]);
 
   const canPreview = Boolean(status?.armed && status?.mexc_keys_configured !== false);
 
@@ -143,6 +173,12 @@ CORS_ORIGINS=https://tradingagen.netlify.app`}
             </ul>
           )}
         </div>
+      )}
+
+      {accountNote && (
+        <p className="mb-3 rounded-md border border-warn/40 bg-[#2a2208] px-3 py-2 text-xs text-warn">
+          {accountNote}
+        </p>
       )}
 
       {status?.armed && status.egress_ip && (

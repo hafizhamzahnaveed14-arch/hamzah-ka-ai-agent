@@ -102,6 +102,11 @@ async def live_status():
             [f"Whitelist MEXC API IP: {egress}"] if egress else []
         ),
         "kill_switch": "Set LIVE_TRADING_ENABLED=false on Railway API and redeploy.",
+        "existing_positions_note": (
+            "Manual MEXC positions (CROSS) share margin with any new desk order. "
+            "If you already hold multiple 200x positions on a small wallet, "
+            "do not add size until equity/available margin recovers."
+        ),
         "note": (
             "Real orders require TRADING_MODE=live, LIVE_TRADING_ENABLED=true, "
             "MEXC keys, IP whitelist, preview → type YES → confirm. Autopilot is OFF."
@@ -112,6 +117,69 @@ async def live_status():
             )
         ),
     }
+
+
+@router.get("/live/account")
+async def live_account():
+    """Read-only MEXC wallet + open positions (requires API keys)."""
+    s = get_settings()
+    if not (s.mexc_api_key and s.mexc_api_secret):
+        raise HTTPException(
+            status_code=400,
+            detail="Set MEXC_API_KEY and MEXC_API_SECRET on Railway API first",
+        )
+    from alphaquant_data.adapters.mexc_private import MexcPrivateClient
+
+    client = MexcPrivateClient(s)
+    try:
+        assets = await client.get_account_assets()
+        positions = await client.get_open_positions()
+        pos_data = positions.get("data") if isinstance(positions, dict) else positions
+        if not isinstance(pos_data, list):
+            pos_data = []
+        asset_data = assets.get("data") if isinstance(assets, dict) else assets
+        return {
+            "ok": True,
+            "assets": asset_data,
+            "open_positions": pos_data,
+            "open_position_count": len(pos_data),
+            "suggested_desk_equity_usdt": _suggest_equity(asset_data),
+            "warning": (
+                "CROSS positions share one wallet. Adding another 200x order "
+                "increases liquidation risk for ALL open positions."
+                if pos_data
+                else None
+            ),
+            "note": "Read-only. Desk Confirm still required to place new orders.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    finally:
+        await client.close()
+
+
+def _suggest_equity(asset_data: object) -> float | None:
+    """Best-effort USDT equity from MEXC assets payload."""
+    rows: list = []
+    if isinstance(asset_data, list):
+        rows = asset_data
+    elif isinstance(asset_data, dict):
+        inner = asset_data.get("assets") or asset_data.get("data") or []
+        if isinstance(inner, list):
+            rows = inner
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        currency = str(row.get("currency") or row.get("symbol") or "").upper()
+        if currency in {"USDT", "USDC"}:
+            for key in ("equity", "availableBalance", "available", "cashBalance", "balance"):
+                val = row.get(key)
+                if val is not None:
+                    try:
+                        return float(val)
+                    except (TypeError, ValueError):
+                        continue
+    return None
 
 
 @router.post("/live/preview")

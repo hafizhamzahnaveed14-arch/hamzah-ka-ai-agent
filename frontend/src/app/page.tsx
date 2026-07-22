@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
   const [side, setSide] = useState<"LONG" | "SHORT">("LONG");
   const [timeframe, setTimeframe] = useState("1h");
-  const [equity, setEquity] = useState(10_000);
+  const [equity, setEquity] = useState(10);
   const [riskPct, setRiskPct] = useState(0.005);
   const [leverage, setLeverage] = useState(200);
   const [marginMode, setMarginMode] = useState<"cross" | "isolated">("cross");

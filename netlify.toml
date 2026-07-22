@@ -1,2 +1,11 @@
-# Build settings live in frontend/netlify.toml (package directory).
-# Do NOT set base/publish here — that doubles paths when UI Base = frontend.
+[build]
+  # Forces correct paths even if Netlify UI auto-fills Package/Publish wrong.
+  base = "frontend"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

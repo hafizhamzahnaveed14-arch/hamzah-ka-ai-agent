@@ -12,9 +12,10 @@ Use a **small** wallet equity in Desk Controls for the first test.
 
 1. MEXC → API Management → Create key  
 2. Permissions: **Futures / Order placing ON**, **Withdraw OFF**  
-3. Whitelist the Railway API egress IP (get it after deploy from):
-   - `GET https://YOUR-API.up.railway.app/api/v1/live/status` → field `egress_ip`  
-   - or `GET .../api/v1/live/egress`  
+3. Whitelist the Railway API egress IP on the MEXC key:
+   - Current production egress (from `/api/v1/live/egress`): **`50.18.122.164`**
+   - Re-check anytime: `GET https://hamzah-ka-ai-agent-production.up.railway.app/api/v1/live/egress`
+   - If Railway changes region/IP, update the whitelist.
 4. Paste **Key + Secret only into Railway Variables** (never GitHub / Netlify / chat)
 
 Checklist:

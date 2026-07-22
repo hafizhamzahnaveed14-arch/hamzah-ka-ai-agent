@@ -7,6 +7,11 @@ type LiveStatus = {
   live_trading_enabled: boolean;
   armed: boolean;
   autopilot: boolean;
+  mexc_keys_configured?: boolean;
+  ready_for_preview?: boolean;
+  egress_ip?: string | null;
+  missing?: string[];
+  kill_switch?: string;
   note: string;
 };
 
@@ -43,7 +48,11 @@ export function LiveConfirmPanel({ symbol, side, entry, stopLoss, equity }: Prop
 
   useEffect(() => {
     void refreshStatus();
+    const id = window.setInterval(() => void refreshStatus(), 30_000);
+    return () => window.clearInterval(id);
   }, [refreshStatus]);
+
+  const canPreview = Boolean(status?.armed && status?.mexc_keys_configured !== false);
 
   const onPreview = async () => {
     if (entry == null || stopLoss == null) {
@@ -117,19 +126,39 @@ export function LiveConfirmPanel({ symbol, side, entry, stopLoss, equity }: Prop
       <p className="mb-3 text-xs text-muted">{status?.note}</p>
 
       {!status?.armed && (
-        <p className="mb-3 rounded-md border border-warn/40 bg-[#2a2208] px-3 py-2 text-xs text-warn">
-          Real trading band hai jab tak `.env` mein dono set na hon:
-          <code className="mt-1 block font-mono text-[11px] text-text">
-            TRADING_MODE=live{"\n"}LIVE_TRADING_ENABLED=true
+        <div className="mb-3 rounded-md border border-warn/40 bg-[#2a2208] px-3 py-2 text-xs text-warn">
+          <p className="mb-1 font-semibold">Railway API pe yeh set karo, phir redeploy:</p>
+          <code className="block font-mono text-[11px] text-text whitespace-pre-wrap">
+            {`TRADING_MODE=live
+LIVE_TRADING_ENABLED=true
+MEXC_API_KEY=...
+MEXC_API_SECRET=...
+CORS_ORIGINS=https://tradingagen.netlify.app`}
           </code>
-          Phir API restart. Keys trade-only + IP whitelist.
+          {status?.missing && status.missing.length > 0 && (
+            <ul className="mt-2 list-disc pl-4 text-[11px] text-muted">
+              {status.missing.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {status?.armed && status.egress_ip && (
+        <p className="mb-3 rounded-md border border-line bg-bg px-3 py-2 font-mono text-[11px] text-muted">
+          MEXC whitelist IP: <span className="text-text">{status.egress_ip}</span>
         </p>
+      )}
+
+      {status?.kill_switch && (
+        <p className="mb-3 text-[11px] text-muted">Kill switch: {status.kill_switch}</p>
       )}
 
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          disabled={loading || !status?.armed}
+          disabled={loading || !canPreview}
           onClick={onPreview}
           className="rounded-md bg-warn px-3 py-1.5 text-xs font-semibold text-bg disabled:opacity-40"
         >
@@ -138,7 +167,7 @@ export function LiveConfirmPanel({ symbol, side, entry, stopLoss, equity }: Prop
         <input
           value={typedYes}
           onChange={(e) => setTypedYes(e.target.value)}
-          placeholder='Type YES'
+          placeholder="Type YES"
           className="w-28 rounded-md border border-line bg-bg px-2 py-1.5 font-mono text-xs"
         />
         <button

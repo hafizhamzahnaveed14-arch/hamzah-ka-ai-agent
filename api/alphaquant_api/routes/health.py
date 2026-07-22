@@ -23,7 +23,7 @@ async def health():
         "status": "ok",
         "app": settings.app_name,
         "trading_mode": settings.trading_mode,
-        "api_build": "journal-v1",
+        "api_build": "live-ready-v1",
         "disclaimer": (
             "Signals carry uncertainty. No outcome is guaranteed. "
             "NO TRADE is a correct and frequent result."
@@ -34,11 +34,19 @@ async def health():
 @router.get("/api/v1/mode")
 async def trading_mode():
     settings = get_settings()
+    live_on = settings.trading_mode == "live" and settings.live_trading_enabled
     return {
         "mode": settings.trading_mode,
-        "label": "PAPER TRADING" if settings.trading_mode == "paper" else "LIVE",
-        "live_execution_enabled": False,
-        "note": "Live execution is gated behind paper-trading validation (Section 15).",
+        "label": "PAPER TRADING" if settings.trading_mode == "paper" else "LIVE TRADING",
+        "live_execution_enabled": live_on,
+        "note": (
+            "LIVE ARMED — human YES confirm required per order. Autopilot OFF. Money at risk."
+            if live_on
+            else (
+                "Paper mode or live disarmed. Set TRADING_MODE=live and "
+                "LIVE_TRADING_ENABLED=true on the API to arm real orders."
+            )
+        ),
     }
 
 

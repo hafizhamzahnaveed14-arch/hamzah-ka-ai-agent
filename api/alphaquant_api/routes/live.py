@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -35,23 +36,80 @@ class LiveConfirmRequest(BaseModel):
     typed_yes: str = Field(description="Must be exactly YES")
 
 
+async def _egress_ip() -> str | None:
+    """Outbound IP Railway uses — whitelist this on MEXC."""
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get("https://api.ipify.org")
+            resp.raise_for_status()
+            return resp.text.strip() or None
+    except Exception:  # noqa: BLE001 — status must still return
+        return None
+
+
+@router.get("/live/egress")
+async def live_egress():
+    ip = await _egress_ip()
+    return {
+        "egress_ip": ip,
+        "note": (
+            "Add this IP to your MEXC API key whitelist. "
+            "If null, open Railway API shell and run: curl -s https://api.ipify.org"
+        ),
+    }
+
+
 @router.get("/live/status")
 async def live_status():
     s = get_settings()
+    keys_ok = bool(s.mexc_api_key and s.mexc_api_secret)
     armed = s.trading_mode == "live" and s.live_trading_enabled
+    egress = await _egress_ip()
+    missing: list[str] = []
+    if s.trading_mode != "live":
+        missing.append("Set TRADING_MODE=live on Railway API")
+    if not s.live_trading_enabled:
+        missing.append("Set LIVE_TRADING_ENABLED=true on Railway API")
+    if not keys_ok:
+        missing.append("Set MEXC_API_KEY and MEXC_API_SECRET on Railway API")
+    if egress:
+        missing.append(f"Whitelist MEXC API IP: {egress}")
+    else:
+        missing.append("Could not detect egress IP — check /api/v1/live/egress")
+
+    # Whitelist is external; don't block "ready_except_ip" messaging
+    checklist = {
+        "trading_mode_live": s.trading_mode == "live",
+        "live_trading_enabled": s.live_trading_enabled,
+        "mexc_keys_configured": keys_ok,
+        "egress_ip": egress,
+        "cors_origins_set": bool(s.cors_origins.strip()),
+        "autopilot": False,
+    }
     return {
         "trading_mode": s.trading_mode,
         "live_trading_enabled": s.live_trading_enabled,
         "armed": armed,
+        "mexc_keys_configured": keys_ok,
+        "ready_for_preview": armed and keys_ok,
         "autopilot": False,
         "margin_mode": s.margin_mode,
         "target_leverage": s.target_leverage,
         "risk_per_trade_pct": s.risk_per_trade_pct,
+        "egress_ip": egress,
+        "checklist": checklist,
+        "missing": missing if not (armed and keys_ok) else (
+            [f"Whitelist MEXC API IP: {egress}"] if egress else []
+        ),
+        "kill_switch": "Set LIVE_TRADING_ENABLED=false on Railway API and redeploy.",
         "note": (
             "Real orders require TRADING_MODE=live, LIVE_TRADING_ENABLED=true, "
-            "preview → type YES → confirm. Autopilot is OFF."
+            "MEXC keys, IP whitelist, preview → type YES → confirm. Autopilot is OFF."
             if not armed
-            else "LIVE ARMED — human confirm still required per order. Money at risk."
+            else (
+                "LIVE ARMED — human confirm still required per order. Money at risk. "
+                + (f"Whitelist IP {egress} on MEXC if not done." if egress else "")
+            )
         ),
     }
 

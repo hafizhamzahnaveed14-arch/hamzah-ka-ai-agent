@@ -21,9 +21,15 @@ export function ModeBanner({ mode, label, liveEnabled }: Props) {
       }`}
     >
       {isPaper ? "PAPER TRADING" : "LIVE"} — {label}
-      {!liveEnabled && (
+      {isPaper || !liveEnabled ? (
         <span className="ml-3 font-normal tracking-normal text-muted normal-case">
-          No real orders. Ideas only.
+          {isPaper
+            ? "No real orders. Ideas only."
+            : "Mode live but DISARMED — set LIVE_TRADING_ENABLED=true"}
+        </span>
+      ) : (
+        <span className="ml-3 font-normal tracking-normal text-warn normal-case">
+          ARMED · human YES per order · autopilot OFF · money at risk
         </span>
       )}
     </motion.div>

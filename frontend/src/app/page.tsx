@@ -12,11 +12,13 @@ import { LiveConfirmPanel } from "@/components/LiveConfirmPanel";
 import {
   evaluateSignal,
   fetchHealth,
+  fetchJournal,
   fetchKlines,
   fetchMode,
   fetchSymbols,
   fetchTicker,
   type Candle,
+  type JournalEntry,
   type TradeIdea,
 } from "@/lib/api";
 
@@ -57,9 +59,9 @@ export default function DashboardPage() {
   const [formatted, setFormatted] = useState<string | null>(null);
   const [evalLoading, setEvalLoading] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [journal, setJournal] = useState<{ id: string; at: string; idea: TradeIdea }[]>(
-    [],
-  );
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [journalLoading, setJournalLoading] = useState(true);
+  const [journalError, setJournalError] = useState<string | null>(null);
 
   const [side, setSide] = useState<"LONG" | "SHORT">("LONG");
   const [timeframe, setTimeframe] = useState("1h");
@@ -97,6 +99,27 @@ export default function DashboardPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadJournal = useCallback(async () => {
+    setJournalLoading(true);
+    setJournalError(null);
+    try {
+      const data = await fetchJournal(40);
+      setJournal(data.entries);
+    } catch (err) {
+      setJournalError(err instanceof Error ? err.message : "Journal load failed");
+    } finally {
+      setJournalLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadJournal();
+    const id = window.setInterval(() => {
+      void loadJournal();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [loadJournal]);
 
   useEffect(() => {
     setRows(
@@ -228,16 +251,7 @@ export default function DashboardPage() {
       });
       setIdea(result.idea);
       setFormatted(result.formatted);
-      setJournal((prev) =>
-        [
-          {
-            id: `${Date.now()}`,
-            at: new Date().toLocaleTimeString(),
-            idea: result.idea,
-          },
-          ...prev,
-        ].slice(0, 40),
-      );
+      void loadJournal();
       setRows((prev) =>
         prev.map((r) =>
           r.symbol === selected
@@ -261,6 +275,7 @@ export default function DashboardPage() {
       setEvalLoading(false);
     }
   }, [
+    loadJournal,
     autoStop,
     equity,
     lastClose,
@@ -347,7 +362,12 @@ export default function DashboardPage() {
                 error={evalError}
                 onEvaluate={onEvaluate}
               />
-              <Journal entries={journal} />
+              <Journal
+                entries={journal}
+                loading={journalLoading}
+                error={journalError}
+                source="neon"
+              />
             </div>
             <LiveConfirmPanel
               symbol={selected}

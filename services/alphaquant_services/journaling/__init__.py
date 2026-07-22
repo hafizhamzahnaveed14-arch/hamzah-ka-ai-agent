@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from alphaquant_db.models import AuditEvent, SignalRecord
@@ -36,3 +38,46 @@ def persist_signal(session: Session, idea: TradeIdea) -> SignalRecord:
     )
     session.flush()
     return record
+
+
+def list_recent_signals(
+    session: Session,
+    *,
+    limit: int = 40,
+    symbol: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return newest journal rows for the desk UI."""
+    limit = max(1, min(limit, 200))
+    stmt = select(SignalRecord)
+    if symbol:
+        stmt = stmt.where(SignalRecord.symbol == symbol.upper())
+    stmt = stmt.order_by(desc(SignalRecord.created_at)).limit(limit)
+    rows = session.scalars(stmt).all()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            reasons = json.loads(row.reasons_json or "[]")
+        except json.JSONDecodeError:
+            reasons = []
+        try:
+            conflicts = json.loads(row.conflicts_json or "[]")
+        except json.JSONDecodeError:
+            conflicts = []
+        out.append(
+            {
+                "id": row.id,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "symbol": row.symbol,
+                "action": row.action,
+                "trading_mode": row.trading_mode,
+                "confidence": row.confidence,
+                "entry": row.entry,
+                "stop_loss": row.stop_loss,
+                "take_profit_1": row.take_profit_1,
+                "risk_reward": row.risk_reward,
+                "reasons": reasons,
+                "conflicts": conflicts,
+                "no_trade_reason": row.no_trade_reason,
+            }
+        )
+    return out

@@ -126,3 +126,28 @@ export async function evaluateSignal(body: {
   }
   return res.json();
 }
+
+export type JournalEntry = {
+  id: number;
+  created_at: string | null;
+  symbol: string;
+  action: "LONG" | "SHORT" | "NO_TRADE" | string;
+  trading_mode: string;
+  confidence: number;
+  entry?: number | null;
+  stop_loss?: number | null;
+  take_profit_1?: number | null;
+  risk_reward?: number | null;
+  reasons: string[];
+  conflicts: string[];
+  no_trade_reason?: string | null;
+};
+
+export async function fetchJournal(
+  limit = 40,
+  symbol?: string,
+): Promise<{ source: string; count: number; entries: JournalEntry[]; note: string }> {
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (symbol) q.set("symbol", symbol);
+  return getJson(`/api/v1/signals/journal?${q.toString()}`);
+}

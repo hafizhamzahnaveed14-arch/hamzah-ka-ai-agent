@@ -1,8 +1,8 @@
 [build]
-  # Forces correct paths even if Netlify UI auto-fills Package/Publish wrong.
-  base = "frontend"
-  command = "npm run build"
-  publish = ".next"
+  # No "base" — Netlify UI auto-fills Package+Publish when base is set and doubles paths.
+  # Use Package directory = frontend in UI; leave Base empty.
+  command = "npm --prefix frontend ci && npm --prefix frontend run build"
+  publish = "frontend/.next"
 
 [build.environment]
   NODE_VERSION = "20"
